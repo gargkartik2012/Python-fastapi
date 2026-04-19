@@ -1,8 +1,7 @@
-from fastapi import FastAPI
-from fastapi.params import Body
+from fastapi import FastAPI, status, Response, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from random import randint,randrange
+from random import randrange
 
 app = FastAPI()
 
@@ -47,7 +46,7 @@ async def create_post(new_post: Post):
 # to add the entry in the already created data
 
 
-@app.post("/data")
+@app.post("/data",status_code=status.HTTP_201_CREATED)
 async def entry(post: Post):
     post_dict = post.dict()
     post_dict['id'] = randrange(0, 1000)
@@ -65,8 +64,21 @@ def find_post(id):
 
 
 @app.get("/post/{id}")
-async def get_post(id):
+async def get_post(id: int, response: Response):  # check for id type validation 
     print(id)
-    post = find_post(int(id))
-    print(post)
+    post = find_post(id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with {id} was not exist")
+        # response.status_code = status.HTTP_404_NOT_FOUND
     return {"post_details": post}
+
+
+
+
+@app.delete("/post/{id}", status_code=status.HTTP_410_GONE)
+async def del_post(id: int):
+    post = find_post(id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    mypost.remove(post)
+    return {"message": "deleted"}
